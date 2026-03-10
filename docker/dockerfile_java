@@ -1,0 +1,16 @@
+FROM eclipse-temurin:11-jdk
+
+# Set working directory
+WORKDIR /app
+
+# Copy WebServer Java file from parent directory
+COPY WebServer.java .
+
+# Compile the Java file
+RUN javac WebServer.java
+
+# Expose port 8083
+EXPOSE 8083
+
+# Run the WebServer
+CMD ["java", "WebServer"]
