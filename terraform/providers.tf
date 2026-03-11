@@ -10,11 +10,12 @@ terraform {
     #     secret_key = "n2mLh7sQy8ZtXo5v1u9w3e4r5t6y7u8i9o0p
     #     bucket     = "terraform-state-bucket-2024"
     #     key        = "terraform.tfstate"
-    #     region     = "us-east-1"
+    #     region     = "ap-south-1"
     # }
   }
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region  = var.aws_region
+  profile = var.aws_profile
 }

@@ -1,3 +1,4 @@
+/*
 resource "aws_s3_bucket" "example_bucket" {
   bucket = "example-bucket-terraform-2024"
   #acl    = "private"
@@ -7,3 +8,4 @@ resource "aws_s3_bucket" "example_bucket" {
     Environment = "Dev"
   }
 }
+*/
