@@ -11,25 +11,32 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_mapping: ${{ steps.build.outputs.image_mapping }}
+    
     steps:
       - name: Build application
         id: build
         run: |
-          IMAGE_MAPPING=$(jq -c -n \
-            --arg artifact "myapp.zip" \
-            --arg version "1.0.0" \
-            '{artifact: $artifact, version: $version}')
-          echo "image_mapping=$IMAGE_MAPPING" >> $GITHUB_OUTPUT
+          # Use heredoc delimiter for proper cross-job transfer
+          echo "image_mapping<<EOF" >> $GITHUB_OUTPUT
+          echo '{"artifact":"myapp.zip","version":"1.0.0"}' >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: print JSON output
-        run: echo '${{ steps.build.outputs.image_mapping }}'
+      - name: print JSON output (within same job)
+        run: |
+          echo "Testing within same job:"
+          echo '${{ steps.build.outputs.image_mapping }}'
           
   stage2-test:
     name: Stage 2 - Test and Print JSON
     runs-on: ubuntu-latest
     needs: stage1-build
+    
     steps:
       - name: Print JSON outputs from Stage 1
         run: |
-          echo "Received image mapping: ${{ needs.stage1-build.outputs.image_mapping }}"
-          
+          echo "=== Received from Stage 1 ==="
+          echo "Raw JSON: ${{ needs.stage1-build.outputs.image_mapping }}"
+          echo ""
+          echo "=== Parsing with fromJSON ==="
+          echo "Artifact: ${{ fromJSON(needs.stage1-build.outputs.image_mapping).artifact }}"
+          echo "Version: ${{ fromJSON(needs.stage1-build.outputs.image_mapping).version }}"
