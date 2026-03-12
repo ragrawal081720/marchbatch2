@@ -16,7 +16,7 @@ jobs:
       - name: Build application
         id: build
         run: |
-          pass= '${{ secrets.MY_SECRET }}'
+          pass="${{ secrets.MY_SECRET }}"
 
           # Define variables
           ARTIFACT_NAME="myapp.zip"
