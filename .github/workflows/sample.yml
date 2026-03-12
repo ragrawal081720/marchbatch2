@@ -1,4 +1,4 @@
-name: Sample Workflow with Job Output
+name: Multi-Stage Workflow with Job Outputs
 
 on:
   push:
@@ -6,32 +6,139 @@ on:
   workflow_dispatch:
 
 jobs:
-  job1:
-    name: Create Output
+  stage1-build:
+    name: Stage 1 - Build with JSON
     runs-on: ubuntu-latest
     outputs:
-      sample_output: ${{ steps.create_output.outputs.message }}
-      timestamp: ${{ steps.create_output.outputs.time }}
+      build_version: ${{ steps.build.outputs.version }}
+      build_status: ${{ steps.build.outputs.status }}
+      build_info: ${{ steps.build.outputs.info }}
+      environment_config: ${{ steps.build.outputs.env_config }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
       
-      - name: Create sample output
-        id: create_output
+      - name: Build application
+        id: build
         run: |
-          echo "message=Hello from Job 1!" >> $GITHUB_OUTPUT
-          echo "time=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_OUTPUT
-          echo "Created output values"
+          echo "version=v1.2.3" >> $GITHUB_OUTPUT
+          echo "status=success" >> $GITHUB_OUTPUT
+          
+          # Create JSON object for build info
+          BUILD_INFO=$(cat <<EOF
+          {
+            "artifact": "myapp.zip",
+            "size": "15.2MB",
+            "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "commit": "abc123def",
+            "branch": "main"
+          }
+          EOF
+          )
+          echo "info=$(echo $BUILD_INFO | jq -c .)" >> $GITHUB_OUTPUT
+          
+          # Create JSON object for environment config
+          ENV_CONFIG=$(cat <<EOF
+          {
+            "database": {
+              "host": "db.example.com",
+              "port": 5432,
+              "name": "production"
+            },
+            "cache": {
+              "redis": "redis.example.com",
+              "ttl": 3600
+            },
+            "features": ["auth", "analytics", "logging"]
+          }
+          EOF
+          )
+          echo "env_config=$(echo $ENV_CONFIG | jq -c .)" >> $GITHUB_OUTPUT
+          echo "Build completed with JSON mapping"
 
-  job2:
-    name: Print Output
+  stage2-test:
+    name: Stage 2 - Test and Print JSON
     runs-on: ubuntu-latest
-    needs: job1
+    needs: stage1-build
+    outputs:
+      test_result: ${{ steps.test.outputs.result }}
+      tests_passed: ${{ steps.test.outputs.passed }}
     
     steps:
-      - name: Print received output
+      - name: Print JSON outputs from Stage 1
         run: |
-          echo "Received message: ${{ needs.job1.outputs.sample_output }}"
-          echo "Received timestamp: ${{ needs.job1.outputs.timestamp }}"
-          echo "Successfully received output from Job 1!"
+          echo "=== Printing JSON Outputs from Stage 1 ==="
+          echo ""
+          echo "Version: ${{ needs.stage1-build.outputs.build_version }}"
+          echo "Status: ${{ needs.stage1-build.outputs.build_status }}"
+          echo ""
+          echo "=== Build Info (JSON) ==="
+          echo '${{ needs.stage1-build.outputs.build_info }}' | jq .
+          echo ""
+          echo "=== Environment Config (JSON) ==="
+          echo '${{ needs.stage1-build.outputs.environment_config }}' | jq .
+          echo ""
+          echo "=== Accessing specific JSON fields ==="
+          echo "Artifact name: $(echo '${{ needs.stage1-build.outputs.build_info }}' | jq -r '.artifact')"
+          echo "Build size: $(echo '${{ needs.stage1-build.outputs.build_info }}' | jq -r '.size')"
+          echo "Database host: $(echo '${{ needs.stage1-build.outputs.environment_config }}' | jq -r '.database.host')"
+          echo "Cache TTL: $(echo '${{ needs.stage1-build.outputs.environment_config }}' | jq -r '.cache.ttl')"
+          echo "Features: $(echo '${{ needs.stage1-build.outputs.environment_config }}' | jq -r '.features[]')"
+      
+      - name: Run tests
+        id: test
+        run: |
+          echo "Testing version: ${{ needs.stage1-build.outputs.build_version }}"
+          echo "result=All tests passed" >> $GITHUB_OUTPUT
+          echo "passed=15" >> $GITHUB_OUTPUT
+
+  stage3-security:
+    name: Stage 3 - Security Scan
+    runs-on: ubuntu-latest
+    needs: [stage1-build, stage2-test]
+    outputs:
+      security_score: ${{ steps.scan.outputs.score }}
+      vulnerabilities: ${{ steps.scan.outputs.vulns }}
+    
+    steps:
+      - name: Security scan
+        id: scan
+        run: |
+          echo "Scanning version: ${{ needs.stage1-build.outputs.build_version }}"
+          echo "Test result: ${{ needs.stage2-test.outputs.test_result }}"
+          echo "score=A+" >> $GITHUB_OUTPUT
+          echo "vulns=0" >> $GITHUB_OUTPUT
+
+  stage4-deploy:
+    name: Stage 4 - Deploy
+    runs-on: ubuntu-latest
+    needs: [stage1-build, stage2-test, stage3-security]
+    
+    steps:
+      - name: Deploy application
+        run: |
+          echo "=== Deployment Summary ==="
+          echo "Version: ${{ needs.stage1-build.outputs.build_version }}"
+          echo "Build Status: ${{ needs.stage1-build.outputs.build_status }}"
+          echo "Tests Passed: ${{ needs.stage2-test.outputs.tests_passed }}"
+          echo "Test Result: ${{ needs.stage2-test.outputs.test_result }}"
+          echo "Security Score: ${{ needs.stage3-security.outputs.security_score }}"
+          echo "Vulnerabilities: ${{ needs.stage3-security.outputs.vulnerabilities }}"
+          echo ""
+          echo "=== Deployment Configuration ==="
+          echo '${{ needs.stage1-build.outputs.environment_config }}' | jq .
+          echo "=========================="
+          echo "Deploying to production..."
+
+  stage5-notify:
+    name: Stage 5 - Notify
+    runs-on: ubuntu-latest
+    needs: [stage1-build, stage2-test, stage3-security, stage4-deploy]
+    if: always()
+    
+    steps:
+      - name: Send notification
+        run: |
+          echo "Deployment notification sent!"
+          echo "Version deployed: ${{ needs.stage1-build.outputs.build_version }}"
