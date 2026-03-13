@@ -1,0 +1,27 @@
+name: Call External Action
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  print-hello:
+    name: Print Hello and Use External Action
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Print hello
+        run: |
+          echo "Hello from the main workflow!"
+          echo "About to use external action..."
+      
+      - name: Use action from another repository
+        uses: jatinbhalla1991/febatch2/.github/actions@main
+        with:
+          # Add any inputs your action requires
+          message: 'Hello from calling workflow'
+      
+      - name: Print completion
+        run: |
+          echo "External action executed successfully!"
