@@ -1,12 +1,14 @@
 {
-  "dashboard": {
-    "title": "Demo App Monitoring Dashboard",
-    "tags": ["demo", "prometheus", "monitoring"],
-    "timezone": "browser",
-    "schemaVersion": 16,
-    "version": 0,
-    "refresh": "5s",
-    "panels": [
+  "id": null,
+  "uid": null,
+  "title": "Demo App Monitoring Dashboard",
+  "tags": ["demo", "prometheus", "monitoring"],
+  "timezone": "browser",
+  "schemaVersion": 16,
+  "version": 0,
+  "refresh": "5s",
+  "editable": true,
+  "panels": [
       {
         "id": 1,
         "title": "HTTP Request Rate",
@@ -14,7 +16,7 @@
         "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
         "targets": [
           {
-            "expr": "rate(http_requests_total{namespace=\"monitoring\"}[1m])",
+            "expr": "rate(http_requests_total{kubernetes_namespace=\"monitoring\"}[1m])",
             "legendFormat": "{{method}} {{route}} - {{status_code}}",
             "refId": "A"
           }
@@ -34,7 +36,7 @@
         "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
         "targets": [
           {
-            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{namespace=\"monitoring\"}[5m]))",
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{kubernetes_namespace=\"monitoring\"}[5m]))",
             "legendFormat": "{{method}} {{route}}",
             "refId": "A"
           }
@@ -54,7 +56,7 @@
         "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
         "targets": [
           {
-            "expr": "http_requests_total{namespace=\"monitoring\"}",
+            "expr": "http_requests_total{kubernetes_namespace=\"monitoring\"}",
             "legendFormat": "{{method}} {{route}} - {{status_code}}",
             "refId": "A"
           }
@@ -74,7 +76,7 @@
         "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
         "targets": [
           {
-            "expr": "rate(business_operations_total{namespace=\"monitoring\"}[1m])",
+            "expr": "rate(business_operations_total{kubernetes_namespace=\"monitoring\"}[1m])",
             "legendFormat": "{{operation_type}} - {{status}}",
             "refId": "A"
           }
@@ -94,7 +96,7 @@
         "gridPos": { "x": 0, "y": 16, "w": 8, "h": 8 },
         "targets": [
           {
-            "expr": "sum by (status_code) (rate(http_requests_total{namespace=\"monitoring\"}[5m]))",
+            "expr": "sum by (status_code) (rate(http_requests_total{kubernetes_namespace=\"monitoring\"}[5m]))",
             "legendFormat": "{{status_code}}",
             "refId": "A"
           }
@@ -113,7 +115,7 @@
         "gridPos": { "x": 8, "y": 16, "w": 8, "h": 8 },
         "targets": [
           {
-            "expr": "rate(process_cpu_seconds_total{namespace=\"monitoring\",job=\"demo-app\"}[1m])",
+            "expr": "rate(process_cpu_seconds_total{kubernetes_namespace=\"monitoring\",app=\"demo-app\"}[1m])",
             "legendFormat": "{{pod}}",
             "refId": "A"
           }
@@ -133,7 +135,7 @@
         "gridPos": { "x": 16, "y": 16, "w": 8, "h": 8 },
         "targets": [
           {
-            "expr": "process_resident_memory_bytes{namespace=\"monitoring\",job=\"demo-app\"}",
+            "expr": "process_resident_memory_bytes{kubernetes_namespace=\"monitoring\",app=\"demo-app\"}",
             "legendFormat": "{{pod}}",
             "refId": "A"
           }
@@ -153,7 +155,7 @@
         "gridPos": { "x": 0, "y": 24, "w": 24, "h": 8 },
         "targets": [
           {
-            "expr": "sum(rate(http_request_duration_seconds_bucket{namespace=\"monitoring\"}[1m])) by (le)",
+            "expr": "sum(rate(http_request_duration_seconds_bucket{kubernetes_namespace=\"monitoring\"}[1m])) by (le)",
             "format": "heatmap",
             "legendFormat": "{{le}}",
             "refId": "A"
@@ -164,6 +166,29 @@
           "format": "s"
         }
       }
-    ]
-  }
+    ],
+  "__inputs": [
+    {
+      "name": "DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "8.0.0"
+    },
+    {
+      "type": "datasource",
+      "id": "prometheus",
+      "name": "Prometheus",
+      "version": "1.0.0"
+    }
+  ]
 }
